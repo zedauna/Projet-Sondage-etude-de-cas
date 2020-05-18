@@ -1,0 +1,1152 @@
+---
+title: "sondage"
+author: "Jeros vigan"
+date: "14/03/2020"
+output:
+  word_document: default
+  pdf_document: default
+editor_options:
+  chunk_output_type: console
+---
+##Importation  des données sur R
+```{r}
+library(readxl)
+library(knitr)
+library(ggplot2)
+donnees=read_xls("G:/cle USB/sondage/ST-2020.xls")
+
+
+str(donnees)
+summary(donnees)
+
+table(donnees$ZONE)
+zoneFactor=as.factor(donnees$ZONE); levels(zoneFactor)
+
+
+```
+
+##Étude de l’univers 
+```{r}
+#Parametre de la population
+N=length(donnees$PAYS)
+sommes=c(sum(donnees$VAR1),sum(donnees$VAR2),sum(donnees$VAR3))
+moyenne=c(mean(donnees$VAR1),mean(donnees$VAR2),mean(donnees$VAR3)); sommes/N
+
+ecart=c(sd(donnees$VAR1),sd(donnees$VAR2),sd(donnees$VAR3))
+ecart1=c(sd(donnees$VAR1)*sqrt((N-1)/N),sd(donnees$VAR2)*sqrt((N-1)/N),sd(donnees$VAR3)*sqrt((N-1)/N))
+
+cv=ecart/moyenne
+cv1=ecart1/moyenne
+
+univers=data.frame("effectifs"=N,"sommes des valeurs"=sommes,"moyenne des valeurs"=moyenne,"ecart type"=ecart,"ecart type1"=ecart1,"coefficent de variation"=cv,"coefficent de variation1"=cv1)
+
+row.names(univers)=c("var1","var2","var3")
+
+kable(univers)
+
+```
+
+
+##mise en œuvre d’un plan de sondage stratifié
+```{r}
+ zoneUnique=unique(donnees$ZONE);zoneUnique
+
+#Par zone pour ls variables
+ZoneAA=subset(donnees,donnees$ZONE=="AA")
+ZoneBB=subset(donnees,donnees$ZONE=="BB")
+ZoneCC=subset(donnees,donnees$ZONE=="CC")
+ZoneDD=subset(donnees,donnees$ZONE=="DD")
+
+#effectifs des valeurs
+Nh1=length(ZoneAA$PAYS)
+Nh2=length(ZoneBB$PAYS)
+Nh3=length(ZoneCC$PAYS)
+Nh4=length(ZoneDD$PAYS)
+
+#sommes par zone
+SomAA=c(tapply(ZoneAA$VAR1,ZoneAA$ZONE, sum),tapply(ZoneAA$VAR2,ZoneAA$ZONE,sum),tapply(ZoneAA$VAR3,ZoneAA$ZONE,sum))
+SomBB=c(tapply(ZoneBB$VAR1,ZoneBB$ZONE, sum),tapply(ZoneBB$VAR2,ZoneBB$ZONE,sum),tapply(ZoneBB$VAR3,ZoneBB$ZONE,sum))
+SomCC=c(tapply(ZoneCC$VAR1,ZoneCC$ZONE, sum),tapply(ZoneCC$VAR2,ZoneCC$ZONE,sum),tapply(ZoneCC$VAR3,ZoneCC$ZONE,sum))
+SomDD=c(tapply(ZoneDD$VAR1,ZoneDD$ZONE, sum),tapply(ZoneDD$VAR2,ZoneDD$ZONE,sum),tapply(ZoneDD$VAR3,ZoneDD$ZONE,sum))
+
+#la moyenne
+MoyAA=c(tapply(ZoneAA$VAR1,ZoneAA$ZONE, mean),tapply(ZoneAA$VAR2,ZoneAA$ZONE,mean),tapply(ZoneAA$VAR3,ZoneAA$ZONE,mean))
+MoyBB=c(tapply(ZoneBB$VAR1,ZoneBB$ZONE, mean),tapply(ZoneBB$VAR2,ZoneBB$ZONE,mean),tapply(ZoneBB$VAR3,ZoneBB$ZONE,mean))
+MoyCC=c(tapply(ZoneCC$VAR1,ZoneCC$ZONE, mean),tapply(ZoneCC$VAR2,ZoneCC$ZONE,mean),tapply(ZoneCC$VAR3,ZoneCC$ZONE,mean))
+MoyDD=c(tapply(ZoneDD$VAR1,ZoneDD$ZONE, mean),tapply(ZoneDD$VAR2,ZoneDD$ZONE,mean),tapply(ZoneDD$VAR3,ZoneDD$ZONE,mean))
+
+#l’écart - type corrigé 
+EcAA=c(tapply(ZoneAA$VAR1,ZoneAA$ZONE, sd),tapply(ZoneAA$VAR2,ZoneAA$ZONE,sd),tapply(ZoneAA$VAR3,ZoneAA$ZONE,sd))
+EcBB=c(tapply(ZoneBB$VAR1,ZoneBB$ZONE, sd),tapply(ZoneBB$VAR2,ZoneBB$ZONE,sd),tapply(ZoneBB$VAR3,ZoneBB$ZONE,sd))
+EcCC=c(tapply(ZoneCC$VAR1,ZoneCC$ZONE, sd),tapply(ZoneCC$VAR2,ZoneCC$ZONE,sd),tapply(ZoneCC$VAR3,ZoneCC$ZONE,sd))
+EcDD=c(tapply(ZoneDD$VAR1,ZoneDD$ZONE, sd),tapply(ZoneDD$VAR2,ZoneDD$ZONE,sd),tapply(ZoneDD$VAR3,ZoneDD$ZONE,sd))
+
+#l'ecart type
+
+EcAA1=EcAA*sqrt((Nh1-1)/Nh1)
+EcBB1=EcBB*sqrt((Nh2-1)/Nh2)
+EcCC1=EcCC*sqrt((Nh3-1)/Nh3)
+EcDD1=EcDD*sqrt((Nh4-1)/Nh4)
+
+#coefficient de variation par zone
+CvAA=EcAA/MoyAA
+CvBB=EcBB/MoyBB
+CvCC=EcCC/MoyCC
+CvDD=EcDD/MoyDD
+
+#cofficient de variation par zone 
+CvAA1=EcAA1/MoyAA
+CvBB1=EcBB1/MoyBB
+CvCC1=EcCC1/MoyCC
+CvDD1=EcDD1/MoyDD
+
+
+ZoneAA=data.frame("Nh"=Nh1,"Somme"=SomAA,"Moyenne"=MoyAA,"ecart type"=EcAA,"ecart type1"=EcAA1,"Coefficient de Variation"=CvAA,"Coefficient de Variation"=CvAA1); row.names(ZoneAA)=c("Var1","Var2","Var3")
+kable(ZoneAA)
+
+ 
+ZoneBB=data.frame("Nh"=Nh2,"Somme"=SomBB,"Moyenne"=MoyBB,"ecart type"=EcBB,"ecart type1"=EcBB1,"Coefficient de Variation"=CvBB,"Coefficient de Variation"=CvBB1);row.names(ZoneBB)=c("Var1","Var2","Var3")
+
+kable(ZoneBB)
+
+ZoneCC=data.frame("Nh"=Nh3,"Somme"=SomCC,"Moyenne"=MoyCC,"ecart type"=EcCC,"ecart type1"=EcCC1,"Coefficient de Variation"=CvCC,"Coefficient de Variation"=CvCC1);row.names(ZoneCC)=c("Var1","Var2","Var3")
+
+kable(ZoneCC)
+
+
+ZoneDD=data.frame("Nh"=Nh4,"Somme"=SomDD,"Moyenne"=MoyDD,"ecart type"=EcDD,"ecart type1"=EcDD1,"Coefficient de Variation"=CvDD,"Coefficient de Variation"=CvDD1);row.names(ZoneDD)=c("Var1","Var2","Var3")
+
+kable(ZoneDD)
+ 
+```
+
+#Question 2 – mise en œuvre d’un plan de sondage stratifié
+```{r}
+
+N=length(donnees$PAYS)
+n=600
+#Strate1
+strate1AA=subset(donnees[,-c(3,4)],donnees$ZONE=="AA" & donnees$VAR3<100)
+strate1BB=subset(donnees[,-c(3,4)],donnees$ZONE=="BB" & donnees$VAR3<100)
+strate1CC=subset(donnees[,-c(3,4)],donnees$ZONE=="CC" & donnees$VAR3<100)
+strate1DD=subset(donnees[,-c(3,4)],donnees$ZONE=="DD" & donnees$VAR3<100)
+
+#Strate2
+strate2AA=subset(donnees[,-c(3,4)],donnees$ZONE=="AA" & donnees$VAR3>=100 & donnees$VAR3<500)
+strate2BB=subset(donnees[,-c(3,4)],donnees$ZONE=="BB" & donnees$VAR3>=100 & donnees$VAR3<500)
+strate2CC=subset(donnees[,-c(3,4)],donnees$ZONE=="CC" & donnees$VAR3>=100 & donnees$VAR3<500)
+strate2DD=subset(donnees[,-c(3,4)],donnees$ZONE=="DD" & donnees$VAR3>=100 & donnees$VAR3<500)
+
+#strate3
+strate3AA=subset(donnees[,-c(3,4)],donnees$ZONE=="AA" & donnees$VAR3>=500 & donnees$VAR3<1000)
+strate3BB=subset(donnees[,-c(3,4)],donnees$ZONE=="BB" & donnees$VAR3>=500 & donnees$VAR3<1000)
+strate3CC=subset(donnees[,-c(3,4)],donnees$ZONE=="CC" & donnees$VAR3>=500 & donnees$VAR3<1000)
+strate3DD=subset(donnees[,-c(3,4)],donnees$ZONE=="DD" & donnees$VAR3>=500 & donnees$VAR3<1000)
+
+#strate4
+strate4AA=subset(donnees[,-c(3,4)],donnees$ZONE=="AA" & donnees$VAR3>=1000 & donnees$VAR3<2000)
+strate4BB=subset(donnees[,-c(3,4)],donnees$ZONE=="BB" & donnees$VAR3>=1000 & donnees$VAR3<2000)
+strate4CC=subset(donnees[,-c(3,4)],donnees$ZONE=="CC" & donnees$VAR3>=1000 & donnees$VAR3<2000)
+strate4DD=subset(donnees[,-c(3,4)],donnees$ZONE=="DD" & donnees$VAR3>=1000 & donnees$VAR3<2000)
+
+#strate5
+strate5AA=subset(donnees[,-c(3,4)],donnees$ZONE=="AA" & donnees$VAR3>=2000 & donnees$VAR3<10000)
+strate5BB=subset(donnees[,-c(3,4)],donnees$ZONE=="BB" & donnees$VAR3>=2000 & donnees$VAR3<10000)
+strate5CC=subset(donnees[,-c(3,4)],donnees$ZONE=="CC" & donnees$VAR3>=2000 & donnees$VAR3<10000)
+strate5DD=subset(donnees[,-c(3,4)],donnees$ZONE=="DD" & donnees$VAR3>=2000 & donnees$VAR3<10000)
+
+#strate6
+strate6AA=subset(donnees[,-c(3,4)],donnees$ZONE=="AA" & donnees$VAR3>=10000)
+strate6BB=subset(donnees[,-c(3,4)],donnees$ZONE=="BB" & donnees$VAR3>=10000)
+strate6CC=subset(donnees[,-c(3,4)],donnees$ZONE=="CC" & donnees$VAR3>=10000)
+strate6DD=subset(donnees[,-c(3,4)],donnees$ZONE=="DD" & donnees$VAR3>=10000)
+
+```
+
+#TZoneAA
+```{r}
+#fonction 
+shh=function(x){ nn=length(x)-1;yhn=mean(x);eca=((x-yhn)^2);return (sqrt((1/nn)*sum(eca)))}
+
+#zone AA
+strate=c("AA1","AA2","AA3","AA4","AA5","AA6")
+
+Nh1=c(length(strate1AA$VAR3),length(strate2AA$VAR3),length(strate3AA$VAR3),length(strate4AA$VAR3),length(strate5AA$VAR3),length(strate6AA$VAR3))
+
+moy=c(mean(strate1AA$VAR3),mean(strate2AA$VAR3),mean(strate3AA$VAR3),mean(strate4AA$VAR3),mean(strate5AA$VAR3),mean(strate6AA$VAR3))
+
+Somme=c(sum(strate1AA$VAR3),sum(strate2AA$VAR3),sum(strate3AA$VAR3),sum(strate4AA$VAR3),sum(strate5AA$VAR3),sum(strate6AA$VAR3)) 
+
+Sh=c(shh(strate1AA$VAR3),shh(strate2AA$VAR3),shh(strate3AA$VAR3),shh(strate4AA$VAR3),shh(strate5AA$VAR3),shh(strate6AA$VAR3)) 
+
+
+nhAp=Nh1*n/N;nhAp=round(nhAp,0)
+
+TzoneAA=data.frame("strate"=strate,"Nh"=Nh1,"Total"=Somme,"Moyenne"=moy,"Sh"=Sh,"nhAp"=nhAp)
+
+
+
+
+```
+
+#TzoneBB
+```{r}
+strate=c("BB1","BB2","BB3","BB4","BB5","BB6")
+
+Nh2=c(length(strate1BB$VAR3),length(strate2BB$VAR3),length(strate3BB$VAR3),length(strate4BB$VAR3),length(strate5BB$VAR3),length(strate6BB$VAR3))
+
+moy=c(mean(strate1BB$VAR3),mean(strate2BB$VAR3),mean(strate3BB$VAR3),mean(strate4BB$VAR3),mean(strate5BB$VAR3),mean(strate6BB$VAR3)) 
+
+Somme=c(sum(strate1BB$VAR3),sum(strate2BB$VAR3),sum(strate3BB$VAR3),sum(strate4BB$VAR3),sum(strate5BB$VAR3),sum(strate6BB$VAR3)) 
+
+Sh=c(shh(strate1BB$VAR3),shh(strate2BB$VAR3),shh(strate3BB$VAR3),shh(strate4BB$VAR3),shh(strate5BB$VAR3),shh(strate6BB$VAR3)) 
+
+
+nhAp=Nh2*(n/N);nhAp=round(nhAp,0)
+
+
+TzoneBB=data.frame("strate"=strate,"Nh"=Nh2,"Total"=Somme,"Moyenne"=moy,"Sh"=Sh,"nhAp"=nhAp )
+
+
+
+```
+
+#TzoneCC
+```{r}
+strate=c("CC1","CC2","CC3","CC4","CC5","CC6")
+
+Nh3=c(length(strate1CC$VAR3),length(strate2CC$VAR3),length(strate3CC$VAR3),length(strate4CC$VAR3),length(strate5CC$VAR3),length(strate6CC$VAR3))
+
+Somme=c(sum(strate1CC$VAR3),sum(strate2CC$VAR3),sum(strate3CC$VAR3),sum(strate4CC$VAR3),sum(strate5CC$VAR3),sum(strate6CC$VAR3)) 
+
+moy=c(mean(strate1CC$VAR3),mean(strate2CC$VAR3),mean(strate3CC$VAR3),mean(strate4CC$VAR3),mean(strate5CC$VAR3),mean(strate6CC$VAR3))
+
+
+Sh=c(shh(strate1CC$VAR3),shh(strate2CC$VAR3),shh(strate3CC$VAR3),shh(strate4CC$VAR3),shh(strate5CC$VAR3),shh(strate6CC$VAR3)) 
+
+
+nhAp=Nh3*(n/N);nhAp=round(nhAp,0)
+
+
+TzoneCC=data.frame("strate"=strate,"Nh"=Nh3,"Total"=Somme,"Moyenne"=moy,"Sh"=Sh,"nhAp"=nhAp)
+
+
+```
+#TzoneDD
+```{r}
+strate=c("DD1","DD2","DD3","DD4","DD5","DD6")
+
+Nh4=c(length(strate1DD$VAR3),length(strate2DD$VAR3),length(strate3DD$VAR3),length(strate4DD$VAR3),length(strate5DD$VAR3),length(strate6DD$VAR3))
+
+Somme=c(sum(strate1DD$VAR3),sum(strate2DD$VAR3),sum(strate3DD$VAR3),sum(strate4DD$VAR3),sum(strate5DD$VAR3),sum(strate6DD$VAR3)) 
+
+moy=c(mean(strate1DD$VAR3),mean(strate2DD$VAR3),mean(strate3DD$VAR3),mean(strate4DD$VAR3),mean(strate5DD$VAR3),mean(strate6DD$VAR3)) 
+
+Sh=c(shh(strate1DD$VAR3),shh(strate2DD$VAR3),shh(strate3DD$VAR3),shh(strate4DD$VAR3),shh(strate5DD$VAR3),shh(strate6DD$VAR3)) 
+
+
+nhAp=Nh4*(n/N);nhAp=round(nhAp,0)
+
+
+TzoneDD=data.frame("strate"=strate,"Nh"=Nh4,"Total"=Somme,"Moyenne"=moy,"Sh"=Sh,"nhAp"=nhAp)
+
+
+```
+#fusion des tableaux 
+```{r}
+tb=rbind(TzoneAA,TzoneBB,TzoneCC,TzoneDD)
+
+  sum(tb[,2])
+  NhSh=c(tb[,2]*tb[,5]);nhNey=(NhSh*n)/sum(NhSh);sum(nhNey);nhNey=round(nhNey,0);sum(nhNey)
+
+  nhAp1=(tb[,2]*n)/N; sum(nhAp1);sum(nhAp1)
+
+  tb=cbind(rbind(TzoneAA,TzoneBB,TzoneCC,TzoneDD),data.frame(nhAp1,NhSh,nhNey))
+
+
+#Totaux
+
+Total=c(length(tb[,1]),sum(tb[,2]),sum(tb[,3]),sum(tb[,4]),sum(tb[,6]),sum(tb[,7]),sum(tb[,9]))
+
+tb11=cbind(tb,data.frame(nhAp1))
+
+
+
+kable(tb)
+kable(tb[1:6,])
+kable(tb[7:12,])
+kable(tb[13:18,])
+kable(tb[19:24,])
+
+```
+#presicion relative , allocation porportionnelle
+```{r}
+#Precision relative de l'ensemble de zones
+##Estimation de la moyenne et total au sein de l'echantion par allocation porportionnelle
+MoySt=sum(tb[,3])/N;MoySt
+mean(donnees$VAR3)
+
+T=sum(tb[,3])
+#Estimateur de variance de la moyenne
+
+varianceStratifie=function(nhpetit,grandNh,Sh,N){
+  cmp1=(grandNh*grandNh)/(N*N)
+  cmp2=1-(nhpetit/grandNh)
+  cmp3=(Sh * Sh)/nhpetit
+  cmp=cmp1*cmp2*cmp3
+  return(sum(cmp))
+}
+
+varianceT=function(nhpetit,grandNh,Sh){
+  cmp1=(grandNh*grandNh * Sh *Sh)/(nhpetit)
+  cmp2=(Sh * Sh * grandNh)
+  cmp=cmp1- cmp2
+  return(sum(cmp))
+}
+
+
+varianceStr=varianceStratifie(tb[,7],tb[,2],tb[,5],N);varianceStr
+varianceTot=varianceT(tb[,7],tb[,2],tb[,5]);varianceTot
+
+
+#precision relative 
+precisionRelative1=(sqrt(varianceStr)/MoySt)*100;precisionRelative1
+
+precisionRelative2=(sqrt(varianceTot)/T)*100;precisionRelative2
+
+TabloPrecisionAP=data.frame("moyenneStrate"=MoySt,"VarianceMoyenneStratifié"=varianceStr,"Precision Relative"=precisionRelative1)
+
+kable(TabloPrecisionAP)
+
+
+```
+
+#precision  relative , allocation optimale
+```{r}
+##Estimation de la moyenne et total au sein de l'echantion par allocation porportionnelle
+MoySt=sum(tb[,3])/N;MoySt
+mean(donnees$VAR3)
+
+#variance 
+varianceStr=varianceStratifie(tb[,9],tb[,2],tb[,5],N)
+
+
+#precision relative 
+precisionRelative1=(sqrt(varianceStr)/MoySt)*100;precisionRelative1
+
+
+TabloPrecisionOP=data.frame("moyenneStrate"=MoySt,"VarianceMoyenneStratifié"=varianceStr,"Precision Relative"=precisionRelative1)
+
+
+
+kable(TabloPrecisionOP)
+
+```
+
+#Precision par zoneAA
+```{r}
+##Estimation de la moyenne et total au sein de l'echantion par allocation porportionnelle
+MoySt=sum(tb[1:6,3])/sum(Nh1);MoySt
+
+
+#variance et Precision relative et precision relative  allocation proportionnelle
+varianceStr=varianceStratifie(tb[1:6,7],tb[1:6,2],tb[1:6,5],sum(Nh1));varianceStr
+precisionRelative1=(sqrt(varianceStr)/(sum(tb[1:6,4])/6))*100;precisionRelative1
+  
+
+##Estimation et precision relative  de l'echantion par allocation Optimale
+varianceStr=varianceStratifie(tb[1:6,9],tb[1:6,2],tb[1:6,5],sum(Nh1))
+precisionRelative11=(sqrt(varianceStr)/MoySt)*100;precisionRelative11
+
+
+TPrecisionZoneAA=data.frame("moyenneStrate"=MoySt,"VarianceMoyenneStratifié"=varianceStr,"Precision Relative AP"=precisionRelative1,"Precision Relative OP"=precisionRelative11)
+
+kable(TPrecisionZoneAA)
+
+
+```
+#Precision pour BB
+```{r}
+##Estimation de la moyenne et total au sein de l'echantion par allocation porportionnelle
+MoySt=sum(tb[7:12,3])/sum(tb[7:12,2]);MoySt
+
+
+#variance et Precision relative et precision relative  allocation proportionnelle
+varianceStr=varianceStratifie(tb[7:12,7],tb[7:12,2],tb[7:12,5],sum(tb[7:12,2]));varianceStr
+precisionRelative1=(sqrt(varianceStr)/(sum(tb[7:12,4])/6))*100;precisionRelative1
+  
+
+##Estimation et precision relative  de l'echantion par allocation Optimale
+varianceStr=varianceStratifie(tb[7:12,9],tb[7:12,2],tb[7:12,5],sum(tb[7:12,2]))
+precisionRelative11=(sqrt(varianceStr)/MoySt)*100;precisionRelative11
+
+
+TPrecisionZoneBB=data.frame("moyenneStrate"=MoySt,"VarianceMoyenneStratifié"=varianceStr,"Precision Relative AP"=precisionRelative1,"Precision Relative OP"=precisionRelative11)
+
+kable(TPrecisionZoneBB)
+
+
+```
+#Precision zone CC
+```{r}
+##Estimation de la moyenne et total au sein de l'echantion par allocation porportionnelle
+MoySt=sum(tb[13:18,3])/sum(tb[13:18,2]);MoySt
+
+
+#variance et Precision relative et precision relative  allocation proportionnelle
+varianceStr=varianceStratifie(tb[13:18,7],tb[13:18,2],tb[13:18,5],sum(tb[13:18,2]));varianceStr
+precisionRelative1=(sqrt(varianceStr)/(sum(tb[13:18,4])/6))*100;precisionRelative1
+  
+
+##Estimation et precision relative  de l'echantion par allocation Optimale
+varianceStr=varianceStratifie(tb[13:18,9],tb[13:18,2],tb[13:18,5],sum(tb[13:18,2]))
+precisionRelative11=(sqrt(varianceStr)/MoySt)*100;precisionRelative11
+
+
+TPrecisionZoneCC=data.frame("moyenneStrate"=MoySt,"VarianceMoyenneStratifié"=varianceStr,"Precision Relative AP"=precisionRelative1,"Precision Relative OP"=precisionRelative11)
+
+kable(TPrecisionZoneCC)
+
+```
+#Precision ZoneDD
+```{r}
+##Estimation de la moyenne et total au sein de l'echantion par allocation porportionnelle
+MoySt=sum(tb[19:24,3])/sum(tb[19:24,2]);MoySt
+
+
+#variance et Precision relative et precision relative  allocation proportionnelle
+varianceStr=varianceStratifie(tb[19:24,7],tb[19:24,2],tb[19:24,5],sum(tb[19:24,2]));varianceStr
+precisionRelative1=(sqrt(varianceStr)/(sum(tb[19:24,4])/6))*100;precisionRelative1
+  
+
+##Estimation et precision relative  de l'echantion par allocation Optimale
+varianceStr=varianceStratifie(tb[19:24,9],tb[19:24,2],tb[19:24,5],sum(tb[19:24,2]))
+precisionRelative11=(sqrt(varianceStr)/MoySt)*100;precisionRelative11
+
+
+TPrecisionZoneDD=data.frame("moyenneStrate"=MoySt,"VarianceMoyenneStratifié"=varianceStr,"Precision Relative AP"=precisionRelative1,"Precision Relative OP"=precisionRelative11)
+
+kable(TPrecisionZoneDD)
+
+#Fusion des tableaux
+tbPr=rbind(TPrecisionZoneAA,TPrecisionZoneBB,TPrecisionZoneCC,TPrecisionZoneDD)
+row.names(tbPr)=c("ZoneAAPrecision","ZoneBBPrecision","ZoneCCPrecision","ZoneDDPrecision")
+
+
+
+
+kable(tbPr)
+
+
+```
+
+
+#graphiques
+```{r}
+X11()
+par(mfrow=c(1,3))
+#les donnees quantitatives
+hist(donnees$VAR1, col = c("orange"),main = paste("Histogramme pour la variable Var1"),ylab = "Effectifs",xlab = "Zones (AA, BB, CC DD) de FRANCE ")
+
+hist(donnees$VAR2, col = c("blue"),main = paste("Histogramme pour la variable Var2"),ylab = "Effectifs",xlab = "Zones (AA, BB, CC DD) de FRANCE ")
+
+hist(donnees$VAR3, col = c("green"),main = paste("Histogramme pour la variable Var3"),ylab = "Effectifs",xlab = "Zones (AA, BB, CC DD) de FRANCE ")
+
+X11()
+
+boxplot(donnees[,c("VAR1","VAR2","VAR3")],col = c("yellow","blue","green"), main = paste("Diagramme en boîte des variables quantitatives"), ylab = "Quantiles") 
+
+
+#Zone AA
+
+X11()
+par(mfrow=c(1,3))
+
+AA=donnees[donnees[,2]=="AA",]
+
+boxplot(AA[,c("VAR1","VAR2","VAR3")],col = c("yellow","blue","green","light blue"), main = paste("Boite de moustaches des variables quantitatives / Zone AA"), ylab = "Quantiles") 
+
+
+#Zone BB
+
+X11()
+par(mfrow=c(1,3))
+
+BB=donnees[donnees[,2]=="BB",]
+
+boxplot(BB[,c("VAR1","VAR2","VAR3")],col = c("yellow","blue","green","light blue"), main = paste("Boite de moustaches des variables quantitatives / Zone BB"), ylab = "Quantiles") 
+
+
+#Zone CC
+
+X11()
+par(mfrow=c(1,3))
+
+CC=donnees[donnees[,2]=="CC",]
+
+boxplot(CC[,c("VAR1","VAR2","VAR3")],col = c("yellow","blue","green","light blue"), main = paste("Boite de moustaches des variables quantitatives / Zone CC"), ylab = "Quantiles") 
+
+#Zone DD
+
+X11()
+par(mfrow=c(1,3))
+
+DD=donnees[donnees[,2]=="CC",]
+
+boxplot(DD[,c("VAR1","VAR2","VAR3")],col = c("yellow","blue","green","light blue"), main = paste("Boite de moustaches des variables quantitatives / Zone DD"), ylab = "Quantiles") 
+
+#zone
+
+barplot(table(as.factor(donnees$ZONE)), main="Répartition des populations par Zones",xlab="Zones",col="orange")
+
+
+  
+X11()
+par(mfrow=c(1,3))
+ ggplot(donnees, aes(x=ZONE, y=VAR1, colour=ZONE, fill=ZONE))+
+        geom_point(position=position_jitterdodge(dodge.width=0.7), size=2) +
+        geom_boxplot(alpha=0.5, position = position_dodge(width=0.8), fatten=NULL)+
+        theme_classic()
+ 
+ X11()
+ ggplot(donnees, aes(x=ZONE, y=VAR2, colour=ZONE, fill=ZONE))+
+        geom_point(position=position_jitterdodge(dodge.width=0.7), size=2) +
+        geom_boxplot(alpha=0.5, position = position_dodge(width=0.8), fatten=NULL)+
+        theme_classic()
+
+ X11()
+ggplot(donnees, aes(x=ZONE, y=VAR3, colour=ZONE, fill=ZONE))+
+        geom_point(position=position_jitterdodge(dodge.width=0.7), size=2) +
+        geom_boxplot(alpha=0.5, position = position_dodge(width=0.8), fatten=NULL)+
+        theme_classic()
+
+ X11()
+ggplot(AA, aes(x=ZONE, y=VAR1,, colour=ZONE, fill=ZONE))+
+        geom_point(position=position_jitterdodge(dodge.width=0.7), size=2) +
+        geom_boxplot(alpha=0.5, position = position_dodge(width=0.8), fatten=NULL)+
+        theme_classic()
+
+```
+#Complemntaire
+
+```{r}
+#allocation proportionnelle
+
+MoySt=sum(tb[,3])/N;MoySt
+mean(donnees$VAR3)
+
+T=sum(tb[,3])
+
+
+
+#allocation proportionnelle nAP
+calnAP=function(k,grandNh,Sh,N,MoyenneX){
+  cmp1= N * sum((grandNh*Sh*Sh))
+  cmp2=(k*N*MoyenneX)*(k*N*MoyenneX)
+  cmp3=sum(Sh * Sh * grandNh)
+  cmp=cmp1/(cmp2 + cmp3)
+  return(cmp)
+}
+
+
+
+nAP=calnAP(2/100,tb[,2],tb[,5],N,MoySt);nAP; sum(nAP)
+
+
+#allocation de Neymar
+
+calnNey=function(k,grandNh,Sh,N,MoyenneX){
+  cmp1= sum(grandNh*Sh) * sum(grandNh*Sh)
+  cmp2=(k*N*MoyenneX)*(k*N*MoyenneX)
+  cmp3=sum(Sh * Sh * grandNh)
+  cmp=cmp1/(cmp2 + cmp3)
+  return(cmp)
+}
+
+nNey=calnNey(2/100,tb[,2],tb[,5],N,MoySt);nNey; sum(nNey)
+
+
+
+calN=data.frame("nombre de strate"=24,"K"=2/100,"nAP"=nAP,"nAP arrondi"=round(nAP,0),"nNey"=nNey,"nNey arrondi"=round(nNey,0))
+
+kable(calN)
+
+#par strate
+
+## allocation proportionnelle
+
+calNhStAP=function(k,grandNh,Sh,T){
+  cmp1=(grandNh*grandNh * Sh *Sh)
+  cmp2=(Sh * Sh * grandNh)
+  cmp3=(k*T)*(k*T)
+  cmp=cmp1/(cmp2+ cmp3)
+  return(cmp)
+}
+
+nhAP=calNhStAP(2/100,tb[,2],tb[,5],T);nhAP
+
+
+## allocation optimale
+
+calNhStNey=function(grandNh,Sh,nNey){
+  cmp1=(grandNh*Sh)
+  cmp2=sum(grandNh*Sh)
+  cmp3=cmp1/ cmp2
+  cmp= cmp3*nNey
+  return(cmp)
+}
+
+nhNeySt=calNhStNey(tb[,2],tb[,5],nNey);nhNeySt
+
+
+calNh=data.frame( "Strate"=tb[,1],"K"=2/100,"nAP par Strate"=nhAP,"nAP arrondi/Strate"=round(nhAP,0)  ,"nNey par Strate"=nhNeySt,"nNey arrondi /Strate"=round(nhNeySt,0))
+
+kable(calNh)
+
+```
+
+Precision et allocation VAR1
+```{r}
+##VAR1
+
+N=length(donnees$PAYS)
+n=600
+#Strate1
+strate1AA=subset(donnees[,-c(4,5)],donnees$ZONE=="AA" & donnees$VAR1<100)
+strate1BB=subset(donnees[,-c(4,5)],donnees$ZONE=="BB" & donnees$VAR1<100)
+strate1CC=subset(donnees[,-c(4,5)],donnees$ZONE=="CC" & donnees$VAR1<100)
+strate1DD=subset(donnees[,-c(4,5)],donnees$ZONE=="DD" & donnees$VAR1<100)
+
+#Strate2
+strate2AA=subset(donnees[,-c(4,5)],donnees$ZONE=="AA" & donnees$VAR1>=100 & donnees$VAR1<500)
+strate2BB=subset(donnees[,-c(4,5)],donnees$ZONE=="BB" & donnees$VAR1>=100 & donnees$VAR1<500)
+strate2CC=subset(donnees[,-c(4,5)],donnees$ZONE=="CC" & donnees$VAR1>=100 & donnees$VAR1<500)
+strate2DD=subset(donnees[,-c(4,5)],donnees$ZONE=="DD" & donnees$VAR1>=100 & donnees$VAR1<500)
+
+#strate3
+strate3AA=subset(donnees[,-c(4,5)],donnees$ZONE=="AA" & donnees$VAR1>=500 & donnees$VAR1<1000)
+strate3BB=subset(donnees[,-c(4,5)],donnees$ZONE=="BB" & donnees$VAR1>=500 & donnees$VAR1<1000)
+strate3CC=subset(donnees[,-c(4,5)],donnees$ZONE=="CC" & donnees$VAR1>=500 & donnees$VAR1<1000)
+strate3DD=subset(donnees[,-c(4,5)],donnees$ZONE=="DD" & donnees$VAR1>=500 & donnees$VAR1<1000)
+
+#strate4
+strate4AA=subset(donnees[,-c(4,5)],donnees$ZONE=="AA" & donnees$VAR1>=1000 & donnees$VAR1<2000)
+strate4BB=subset(donnees[,-c(4,5)],donnees$ZONE=="BB" & donnees$VAR1>=1000 & donnees$VAR1<2000)
+strate4CC=subset(donnees[,-c(4,5)],donnees$ZONE=="CC" & donnees$VAR1>=1000 & donnees$VAR1<2000)
+strate4DD=subset(donnees[,-c(4,5)],donnees$ZONE=="DD" & donnees$VAR1>=1000 & donnees$VAR1<2000)
+
+#strate5
+strate5AA=subset(donnees[,-c(4,5)],donnees$ZONE=="AA" & donnees$VAR1>=2000 & donnees$VAR1<10000)
+strate5BB=subset(donnees[,-c(4,5)],donnees$ZONE=="BB" & donnees$VAR1>=2000 & donnees$VAR1<10000)
+strate5CC=subset(donnees[,-c(4,5)],donnees$ZONE=="CC" & donnees$VAR1>=2000 & donnees$VAR1<10000)
+strate5DD=subset(donnees[,-c(4,5)],donnees$ZONE=="DD" & donnees$VAR1>=2000 & donnees$VAR1<10000)
+
+#strate6
+strate6AA=subset(donnees[,-c(4,5)],donnees$ZONE=="AA" & donnees$VAR1>=10000)
+strate6BB=subset(donnees[,-c(4,5)],donnees$ZONE=="BB" & donnees$VAR1>=10000)
+strate6CC=subset(donnees[,-c(4,5)],donnees$ZONE=="CC" & donnees$VAR1>=10000)
+strate6DD=subset(donnees[,-c(4,5)],donnees$ZONE=="DD" & donnees$VAR1>=10000)
+
+
+
+shh=function(x){ nn=length(x)-1;yhn=mean(x);eca=((x-yhn)^2);return (sqrt((1/nn)*sum(eca)))}
+
+#zone AA
+strate=c("AA1","AA2","AA3","AA4","AA5","AA6")
+
+Nh1=c(length(strate1AA$VAR1),length(strate2AA$VAR1),length(strate3AA$VAR1),length(strate4AA$VAR1),length(strate5AA$VAR1),length(strate6AA$VAR1))
+
+moy=c(mean(strate1AA$VAR1),mean(strate2AA$VAR1),mean(strate3AA$VAR1),mean(strate4AA$VAR1),mean(strate5AA$VAR1),mean(strate6AA$VAR1))
+
+Somme=c(sum(strate1AA$VAR1),sum(strate2AA$VAR1),sum(strate3AA$VAR1),sum(strate4AA$VAR1),sum(strate5AA$VAR1),sum(strate6AA$VAR1)) 
+
+Sh=c(shh(strate1AA$VAR1),shh(strate2AA$VAR1),shh(strate3AA$VAR1),shh(strate4AA$VAR1),shh(strate5AA$VAR1),shh(strate6AA$VAR1)) 
+
+
+nhAp=Nh1*n/N;nhAp=round(nhAp,0)
+
+TzoneAA=data.frame("strate"=strate,"Nh"=Nh1,"Total"=Somme,"Moyenne"=moy,"Sh"=Sh,"nhAp"=nhAp)
+
+
+strate=c("BB1","BB2","BB3","BB4","BB5","BB6")
+
+Nh2=c(length(strate1BB$VAR1),length(strate2BB$VAR1),length(strate3BB$VAR1),length(strate4BB$VAR1),length(strate5BB$VAR1),length(strate6BB$VAR1))
+
+moy=c(mean(strate1BB$VAR1),mean(strate2BB$VAR1),mean(strate3BB$VAR1),mean(strate4BB$VAR1),mean(strate5BB$VAR1),mean(strate6BB$VAR1)) 
+
+Somme=c(sum(strate1BB$VAR1),sum(strate2BB$VAR1),sum(strate3BB$VAR1),sum(strate4BB$VAR1),sum(strate5BB$VAR1),sum(strate6BB$VAR1)) 
+
+Sh=c(shh(strate1BB$VAR1),shh(strate2BB$VAR1),shh(strate3BB$VAR1),shh(strate4BB$VAR1),shh(strate5BB$VAR1),shh(strate6BB$VAR1)) 
+
+
+nhAp=Nh2*(n/N);nhAp=round(nhAp,0)
+
+
+TzoneBB=data.frame("strate"=strate,"Nh"=Nh2,"Total"=Somme,"Moyenne"=moy,"Sh"=Sh,"nhAp"=nhAp )
+
+
+strate=c("CC1","CC2","CC3","CC4","CC5","CC6")
+
+Nh3=c(length(strate1CC$VAR1),length(strate2CC$VAR1),length(strate3CC$VAR1),length(strate4CC$VAR1),length(strate5CC$VAR1),length(strate6CC$VAR1))
+
+Somme=c(sum(strate1CC$VAR1),sum(strate2CC$VAR1),sum(strate3CC$VAR1),sum(strate4CC$VAR1),sum(strate5CC$VAR1),sum(strate6CC$VAR1)) 
+
+moy=c(mean(strate1CC$VAR1),mean(strate2CC$VAR1),mean(strate3CC$VAR1),mean(strate4CC$VAR1),mean(strate5CC$VAR1),0)
+
+
+Sh=c(shh(strate1CC$VAR1),shh(strate2CC$VAR1),shh(strate3CC$VAR1),shh(strate4CC$VAR1),shh(strate5CC$VAR1),shh(strate6CC$VAR1)) 
+
+
+nhAp=Nh3*(n/N);nhAp=round(nhAp,0)
+
+
+TzoneCC=data.frame("strate"=strate,"Nh"=Nh3,"Total"=Somme,"Moyenne"=moy,"Sh"=Sh,"nhAp"=nhAp)
+
+
+strate=c("DD1","DD2","DD3","DD4","DD5","DD6")
+
+Nh4=c(length(strate1DD$VAR1),length(strate2DD$VAR1),length(strate3DD$VAR1),length(strate4DD$VAR1),length(strate5DD$VAR1),length(strate6DD$VAR1))
+
+Somme=c(sum(strate1DD$VAR1),sum(strate2DD$VAR1),sum(strate3DD$VAR1),sum(strate4DD$VAR1),sum(strate5DD$VAR1),sum(strate6DD$VAR1)) 
+
+moy=c(mean(strate1DD$VAR1),mean(strate2DD$VAR1),mean(strate3DD$VAR1),mean(strate4DD$VAR1),mean(strate5DD$VAR1),mean(strate6DD$VAR1)) 
+
+Sh=c(shh(strate1DD$VAR1),shh(strate2DD$VAR1),shh(strate3DD$VAR1),shh(strate4DD$VAR1),shh(strate5DD$VAR1),shh(strate6DD$VAR1)) 
+
+
+nhAp=Nh4*(n/N);nhAp=round(nhAp,0)
+
+
+TzoneDD=data.frame("strate"=strate,"Nh"=Nh4,"Total"=Somme,"Moyenne"=moy,"Sh"=Sh,"nhAp"=nhAp)
+
+
+tb1=rbind(TzoneAA,TzoneBB,TzoneCC,TzoneDD)
+
+  sum(tb1[,2])
+  NhSh=c(tb1[,2]*tb1[,5]);nhNey=(NhSh*n)/sum(NhSh);sum(nhNey);nhNey=round(nhNey,0);sum(nhNey)
+
+  nhAp1=(tb1[,2]*n)/N; sum(nhAp1);sum(nhAp1)
+
+  tb1=cbind(rbind(TzoneAA,TzoneBB,TzoneCC,TzoneDD),data.frame(nhAp1,NhSh,nhNey))
+
+
+  #Totaux
+
+Total=c(length(tb1[,1]),sum(tb1[,2]),sum(tb1[,3]),sum(tb1[,4]),sum(tb1[,6]),sum(tb1[,7]),sum(tb1[,9]))
+
+tb11=cbind(tb1,data.frame(nhAp1))
+
+
+
+kable(tb1)
+kable(tb1[1:6,])
+kable(tb1[7:12,])
+kable(tb1[13:18,])
+kable(tb1[19:24,])
+  
+
+#Precision relative de l'ensemble de zones
+##Estimation de la moyenne et total au sein de l'echantion par allocation porportionnelle
+MoySt=sum(tb1[,3])/N;MoySt
+mean(donnees$VAR1)
+
+T=sum(tb1[,3]);T
+#Estimateur de variance de la moyenne
+
+varianceStratifie=function(nhpetit,grandNh,Sh,N){
+  cmp1=(grandNh*grandNh)/(N*N)
+  cmp2=1-(nhpetit/grandNh)
+  cmp3=(Sh * Sh)/nhpetit
+  cmp=cmp1*cmp2*cmp3
+  return(sum(cmp))
+}
+
+varianceT=function(nhpetit,grandNh,Sh){
+  cmp1=(grandNh*grandNh * Sh *Sh)/(nhpetit)
+  cmp2=(Sh * Sh * grandNh)
+  cmp=cmp1- cmp2
+  return(sum(cmp))
+}
+
+cp1=(tb1[-18,2]*tb1[-18,2]*tb1[-18,5]*tb1[-18,5])/tb1[-18,7]
+cp2=(tb1[-18,5]*tb1[-18,5]* tb1[-18,2])
+cp=cp1- cp2;cp
+
+varianceStr=varianceStratifie(tb1[-18,7],tb1[-18,2],tb1[-18,5],N);varianceStr
+varianceTot=varianceT(tb1[-18,7],tb1[-18,2],tb1[-18,5]);varianceTot
+
+
+#precision relative 
+precisionRelative1=(sqrt(varianceStr)/MoySt)*100;precisionRelative1
+
+precisionRelative2=(sqrt(varianceTot)/T)*100;precisionRelative2
+
+TabloPrecisionAP=data.frame("moyenneStrate"=MoySt,"VarianceMoyenneStratifié"=varianceStr,"Precision Relative"=precisionRelative1)
+
+kable(TabloPrecisionAP)
+
+##Estimation de la moyenne et total au sein de l'echantion par allocation porportionnelle
+MoySt=sum(tb1[-18,3])/N;MoySt
+mean(donnees$VAR1)
+
+#variance 
+varianceStr=varianceStratifie(tb1[-18,9],tb1[-18,2],tb1[-18,5],N)
+
+
+#precision relative 
+precisionRelative1=(sqrt(varianceStr)/MoySt)*100;precisionRelative1
+
+
+TabloPrecisionOP=data.frame("moyenneStrate"=MoySt,"VarianceMoyenneStratifié"=varianceStr,"Precision Relative"=precisionRelative1)
+
+kable(TabloPrecisionOP)
+
+
+#allocation proportionnelle
+
+MoySt=sum(tb1[-18,3])/N;MoySt
+mean(donnees$VAR3)
+
+T=sum(tb1[-18,3])
+
+
+
+#allocation proportionnelle nAP
+calnAP=function(k,grandNh,Sh,N,MoyenneX){
+  cmp1= N * sum((grandNh*Sh*Sh))
+  cmp2=(k*N*MoyenneX)*(k*N*MoyenneX)
+  cmp3=sum(Sh * Sh * grandNh)
+  cmp=cmp1/(cmp2 + cmp3)
+  return(cmp)
+}
+
+
+
+nAP=calnAP(2/100,tb1[-18,2],tb1[-18,5],N,MoySt);nAP; sum(nAP)
+
+
+#allocation de Neymar
+
+calnNey=function(k,grandNh,Sh,N,MoyenneX){
+  cmp1= sum(grandNh*Sh) * sum(grandNh*Sh)
+  cmp2=(k*N*MoyenneX)*(k*N*MoyenneX)
+  cmp3=sum(Sh * Sh * grandNh)
+  cmp=cmp1/(cmp2 + cmp3)
+  return(cmp)
+}
+
+nNey=calnNey(2/100,tb1[,2],tb1[-18,5],N,MoySt);nNey; sum(nNey)
+
+
+
+calN=data.frame("nombre de strate"=24,"K"=2/100,"nAP"=nAP,"nAP arrondi"=round(nAP,0),"nNey"=nNey,"nNey arrondi"=round(nNey,0))
+
+kable(calN)
+
+#par strate
+
+## allocation proportionnelle
+
+calNhStAP=function(k,grandNh,Sh,T){
+  cmp1=(grandNh*grandNh * Sh *Sh)
+  cmp2=(Sh * Sh * grandNh)
+  cmp3=(k*T)*(k*T)
+  cmp=cmp1/(cmp2+ cmp3)
+  return(cmp)
+}
+
+nhAP=calNhStAP(2/100,tb1[-18,2],tb1[-18,5],T);nhAP
+
+
+## allocation optimale
+
+calNhStNey=function(grandNh,Sh,nNey){
+  cmp1=(grandNh*Sh)
+  cmp2=sum(grandNh*Sh)
+  cmp3=cmp1/ cmp2
+  cmp= cmp3*nNey
+  return(cmp)
+}
+
+nhNeySt=calNhStNey(tb1[-18,2],tb1[-18,5],nNey);nhNeySt
+
+
+calNh=data.frame( "Strate"=tb1[-18,1],"K"=2/100,"nAP par Strate"=nhAP,"nAP arrondi/Strate"=round(nhAP,0)  ,"nNey par Strate"=nhNeySt,"nNey arrondi /Strate"=round(nhNeySt,0))
+
+kable(calNh)
+
+
+
+
+```
+
+Precision et allocation VAR2
+```{r}
+
+##VAR2
+
+N=length(donnees$PAYS)
+n=600
+#Strate1
+strate1AA=subset(donnees[,-c(3,5)],donnees$ZONE=="AA" & donnees$VAR2<100)
+strate1BB=subset(donnees[,-c(3,5)],donnees$ZONE=="BB" & donnees$VAR2<100)
+strate1CC=subset(donnees[,-c(3,5)],donnees$ZONE=="CC" & donnees$VAR2<100)
+strate1DD=subset(donnees[,-c(3,5)],donnees$ZONE=="DD" & donnees$VAR2<100)
+
+#Strate2
+strate2AA=subset(donnees[,-c(3,5)],donnees$ZONE=="AA" & donnees$VAR2>=100 & donnees$VAR2<500)
+strate2BB=subset(donnees[,-c(3,5)],donnees$ZONE=="BB" & donnees$VAR2>=100 & donnees$VAR2<500)
+strate2CC=subset(donnees[,-c(3,5)],donnees$ZONE=="CC" & donnees$VAR2>=100 & donnees$VAR2<500)
+strate2DD=subset(donnees[,-c(3,5)],donnees$ZONE=="DD" & donnees$VAR2>=100 & donnees$VAR2<500)
+
+#strate3
+strate3AA=subset(donnees[,-c(3,5)],donnees$ZONE=="AA" & donnees$VAR2>=500 & donnees$VAR2<1000)
+strate3BB=subset(donnees[,-c(3,5)],donnees$ZONE=="BB" & donnees$VAR2>=500 & donnees$VAR2<1000)
+strate3CC=subset(donnees[,-c(3,5)],donnees$ZONE=="CC" & donnees$VAR2>=500 & donnees$VAR2<1000)
+strate3DD=subset(donnees[,-c(3,5)],donnees$ZONE=="DD" & donnees$VAR2>=500 & donnees$VAR2<1000)
+
+#strate4
+strate4AA=subset(donnees[,-c(3,5)],donnees$ZONE=="AA" & donnees$VAR2>=1000 & donnees$VAR2<2000)
+strate4BB=subset(donnees[,-c(3,5)],donnees$ZONE=="BB" & donnees$VAR2>=1000 & donnees$VAR2<2000)
+strate4CC=subset(donnees[,-c(3,5)],donnees$ZONE=="CC" & donnees$VAR2>=1000 & donnees$VAR2<2000)
+strate4DD=subset(donnees[,-c(3,5)],donnees$ZONE=="DD" & donnees$VAR2>=1000 & donnees$VAR2<2000)
+
+#strate5
+strate5AA=subset(donnees[,-c(3,5)],donnees$ZONE=="AA" & donnees$VAR2>=2000 & donnees$VAR2<10000)
+strate5BB=subset(donnees[,-c(3,5)],donnees$ZONE=="BB" & donnees$VAR2>=2000 & donnees$VAR2<10000)
+strate5CC=subset(donnees[,-c(3,5)],donnees$ZONE=="CC" & donnees$VAR2>=2000 & donnees$VAR2<10000)
+strate5DD=subset(donnees[,-c(3,5)],donnees$ZONE=="DD" & donnees$VAR2>=2000 & donnees$VAR2<10000)
+
+#strate6
+strate6AA=subset(donnees[,-c(3,5)],donnees$ZONE=="AA" & donnees$VAR2>=10000)
+strate6BB=subset(donnees[,-c(3,5)],donnees$ZONE=="BB" & donnees$VAR2>=10000)
+strate6CC=subset(donnees[,-c(3,5)],donnees$ZONE=="CC" & donnees$VAR2>=10000)
+strate6DD=subset(donnees[,-c(3,5)],donnees$ZONE=="DD" & donnees$VAR2>=10000)
+
+
+
+shh=function(x){ nn=length(x)-1;yhn=mean(x);eca=((x-yhn)^2);return (sqrt((1/nn)*sum(eca)))}
+
+#zone AA
+strate=c("AA1","AA2","AA3","AA4","AA5","AA6")
+
+Nh1=c(length(strate1AA$VAR2),length(strate2AA$VAR2),length(strate3AA$VAR2),length(strate4AA$VAR2),length(strate5AA$VAR2),length(strate6AA$VAR2))
+
+moy=c(mean(strate1AA$VAR2),mean(strate2AA$VAR2),mean(strate3AA$VAR2),mean(strate4AA$VAR2),mean(strate5AA$VAR2),mean(strate6AA$VAR2))
+
+Somme=c(sum(strate1AA$VAR2),sum(strate2AA$VAR2),sum(strate3AA$VAR2),sum(strate4AA$VAR2),sum(strate5AA$VAR2),sum(strate6AA$VAR2)) 
+
+Sh=c(shh(strate1AA$VAR2),shh(strate2AA$VAR2),shh(strate3AA$VAR2),shh(strate4AA$VAR2),shh(strate5AA$VAR2),shh(strate6AA$VAR2)) 
+
+
+nhAp=Nh1*n/N;nhAp=round(nhAp,0)
+
+TzoneAA=data.frame("strate"=strate,"Nh"=Nh1,"Total"=Somme,"Moyenne"=moy,"Sh"=Sh,"nhAp"=nhAp)
+
+
+strate=c("BB1","BB2","BB3","BB4","BB5","BB6")
+
+Nh2=c(length(strate1BB$VAR2),length(strate2BB$VAR2),length(strate3BB$VAR2),length(strate4BB$VAR2),length(strate5BB$VAR2),length(strate6BB$VAR2))
+
+moy=c(mean(strate1BB$VAR2),mean(strate2BB$VAR2),mean(strate3BB$VAR2),mean(strate4BB$VAR2),mean(strate5BB$VAR2),mean(strate6BB$VAR2)) 
+
+Somme=c(sum(strate1BB$VAR2),sum(strate2BB$VAR2),sum(strate3BB$VAR2),sum(strate4BB$VAR2),sum(strate5BB$VAR2),sum(strate6BB$VAR2)) 
+
+Sh=c(shh(strate1BB$VAR2),shh(strate2BB$VAR2),shh(strate3BB$VAR2),shh(strate4BB$VAR2),shh(strate5BB$VAR2),shh(strate6BB$VAR2)) 
+
+
+nhAp=Nh2*(n/N);nhAp=round(nhAp,0)
+
+
+TzoneBB=data.frame("strate"=strate,"Nh"=Nh2,"Total"=Somme,"Moyenne"=moy,"Sh"=Sh,"nhAp"=nhAp )
+
+
+strate=c("CC1","CC2","CC3","CC4","CC5","CC6")
+
+Nh3=c(length(strate1CC$VAR2),length(strate2CC$VAR2),length(strate3CC$VAR2),length(strate4CC$VAR2),length(strate5CC$VAR2),length(strate6CC$VAR2))
+
+Somme=c(sum(strate1CC$VAR2),sum(strate2CC$VAR2),sum(strate3CC$VAR2),sum(strate4CC$VAR2),sum(strate5CC$VAR2),sum(strate6CC$VAR2)) 
+
+moy=c(mean(strate1CC$VAR2),mean(strate2CC$VAR2),mean(strate3CC$VAR2),mean(strate4CC$VAR2),mean(strate5CC$VAR2),mean(strate6CC$VAR2))
+
+
+Sh=c(shh(strate1CC$VAR2),shh(strate2CC$VAR2),shh(strate3CC$VAR2),shh(strate4CC$VAR2),shh(strate5CC$VAR2),shh(strate6CC$VAR2)) 
+
+
+nhAp=Nh3*(n/N);nhAp=round(nhAp,0)
+
+
+TzoneCC=data.frame("strate"=strate,"Nh"=Nh3,"Total"=Somme,"Moyenne"=moy,"Sh"=Sh,"nhAp"=nhAp)
+
+
+strate=c("DD1","DD2","DD3","DD4","DD5","DD6")
+
+Nh4=c(length(strate1DD$VAR2),length(strate2DD$VAR2),length(strate3DD$VAR2),length(strate4DD$VAR2),length(strate5DD$VAR2),length(strate6DD$VAR2))
+
+Somme=c(sum(strate1DD$VAR2),sum(strate2DD$VAR2),sum(strate3DD$VAR2),sum(strate4DD$VAR2),sum(strate5DD$VAR2),sum(strate6DD$VAR2)) 
+
+moy=c(mean(strate1DD$VAR2),mean(strate2DD$VAR2),mean(strate3DD$VAR2),mean(strate4DD$VAR2),mean(strate5DD$VAR2),mean(strate6DD$VAR2)) 
+
+Sh=c(shh(strate1DD$VAR2),shh(strate2DD$VAR2),shh(strate3DD$VAR2),shh(strate4DD$VAR2),shh(strate5DD$VAR2),shh(strate6DD$VAR2)) 
+
+
+nhAp=Nh4*(n/N);nhAp=round(nhAp,0)
+
+
+TzoneDD=data.frame("strate"=strate,"Nh"=Nh4,"Total"=Somme,"Moyenne"=moy,"Sh"=Sh,"nhAp"=nhAp)
+
+
+tb2=rbind(TzoneAA,TzoneBB,TzoneCC,TzoneDD)
+
+  sum(tb2[,2])
+  NhSh=c(tb2[,2]*tb2[,5]);nhNey=(NhSh*n)/sum(NhSh);sum(nhNey);nhNey=round(nhNey,0);sum(nhNey)
+
+  nhAp1=(tb2[,2]*n)/N; sum(nhAp1);sum(nhAp1)
+
+  tb2=cbind(rbind(TzoneAA,TzoneBB,TzoneCC,TzoneDD),data.frame(nhAp1,NhSh,nhNey))
+
+
+  #Totaux
+
+Total=c(length(tb2[,1]),sum(tb2[,2]),sum(tb2[,3]),sum(tb2[,4]),sum(tb2[,6]),sum(tb2[,7]),sum(tb2[,9]))
+
+tb21=cbind(tb2,data.frame(nhAp1))
+
+
+
+kable(tb2)
+kable(tb2[1:6,])
+kable(tb2[7:12,])
+kable(tb2[13:18,])
+kable(tb2[19:24,])
+  
+
+#Precision relative de l'ensemble de zones
+##Estimation de la moyenne et total au sein de l'echantion par allocation porportionnelle
+MoySt=sum(tb2[,3])/N;MoySt
+mean(donnees$VAR2)
+
+T=sum(tb2[,3])
+#Estimateur de variance de la moyenne
+
+varianceStratifie=function(nhpetit,grandNh,Sh,N){
+  cmp1=(grandNh*grandNh)/(N*N)
+  cmp2=1-(nhpetit/grandNh)
+  cmp3=(Sh * Sh)/nhpetit
+  cmp=cmp1*cmp2*cmp3
+  return(sum(cmp))
+}
+
+varianceT=function(nhpetit,grandNh,Sh){
+  cmp1=(grandNh*grandNh * Sh *Sh)/(nhpetit)
+  cmp2=(Sh * Sh * grandNh)
+  cmp=cmp1- cmp2
+  return(sum(cmp))
+}
+
+
+varianceStr=varianceStratifie(tb2[,7],tb2[,2],tb2[,5],N);varianceStr
+varianceTot=varianceT(tb2[,7],tb2[,2],tb2[,5]);varianceTot
+
+
+#precision relative 
+precisionRelative1=(sqrt(varianceStr)/MoySt)*100;precisionRelative1
+
+precisionRelative2=(sqrt(varianceTot)/T)*100;precisionRelative2
+
+TabloPrecisionAP=data.frame("moyenneStrate"=MoySt,"VarianceMoyenneStratifié"=varianceStr,"Precision Relative"=precisionRelative1)
+
+kable(TabloPrecisionAP)
+
+##Estimation de la moyenne et total au sein de l'echantion par allocation porportionnelle
+MoySt=sum(tb2[,3])/N;MoySt
+mean(donnees$VAR2)
+
+#variance 
+varianceStr=varianceStratifie(tb2[,9],tb2[,2],tb2[,5],N)
+
+
+#precision relative 
+precisionRelative1=(sqrt(varianceStr)/MoySt)*100;precisionRelative1
+
+
+TabloPrecisionOP=data.frame("moyenneStrate"=MoySt,"VarianceMoyenneStratifié"=varianceStr,"Precision Relative"=precisionRelative1)
+
+kable(TabloPrecisionOP)
+
+
+
+
+#allocation proportionnelle
+
+MoySt=sum(tb2[,3])/N;MoySt
+mean(donnees$VAR3)
+
+T=sum(tb2[,3])
+
+
+
+#allocation proportionnelle nAP
+calnAP=function(k,grandNh,Sh,N,MoyenneX){
+  cmp1= N * sum((grandNh*Sh*Sh))
+  cmp2=(k*N*MoyenneX)*(k*N*MoyenneX)
+  cmp3=sum(Sh * Sh * grandNh)
+  cmp=cmp1/(cmp2 + cmp3)
+  return(cmp)
+}
+
+
+
+nAP=calnAP(2/100,tb2[,2],tb2[,5],N,MoySt);nAP; sum(nAP)
+
+
+#allocation de Neymar
+
+calnNey=function(k,grandNh,Sh,N,MoyenneX){
+  cmp1= sum(grandNh*Sh) * sum(grandNh*Sh)
+  cmp2=(k*N*MoyenneX)*(k*N*MoyenneX)
+  cmp3=sum(Sh * Sh * grandNh)
+  cmp=cmp1/(cmp2 + cmp3)
+  return(cmp)
+}
+
+nNey=calnNey(2/100,tb2[,2],tb2[,5],N,MoySt);nNey; sum(nNey)
+
+
+
+calN=data.frame("nombre de strate"=24,"K"=2/100,"nAP"=nAP,"nAP arrondi"=round(nAP,0),"nNey"=nNey,"nNey arrondi"=round(nNey,0))
+
+kable(calN)
+
+#par strate
+
+## allocation proportionnelle
+
+calNhStAP=function(k,grandNh,Sh,T){
+  cmp1=(grandNh*grandNh * Sh *Sh)
+  cmp2=(Sh * Sh * grandNh)
+  cmp3=(k*T)*(k*T)
+  cmp=cmp1/(cmp2+ cmp3)
+  return(cmp)
+}
+
+nhAP=calNhStAP(2/100,tb2[,2],tb2[,5],T);nhAP
+
+
+## allocation optimale
+
+calNhStNey=function(grandNh,Sh,nNey){
+  cmp1=(grandNh*Sh)
+  cmp2=sum(grandNh*Sh)
+  cmp3=cmp1/ cmp2
+  cmp= cmp3*nNey
+  return(cmp)
+}
+
+nhNeySt=calNhStNey(tb2[,2],tb2[,5],nNey);nhNeySt
+
+
+calNh=data.frame( "Strate"=tb2[,1],"K"=2/100,"nAP par Strate"=nhAP,"nAP arrondi/Strate"=round(nhAP,0)  ,"nNey par Strate"=nhNeySt,"nNey arrondi /Strate"=round(nhNeySt,0))
+
+kable(calNh)
+
