@@ -1,4 +1,4 @@
-# Projet-Sondage-tude-de-cas-
+# Projet-Sondage-etude-de-cas
 Cette étude de cas porte sur un tableau relatif à la France qui est découpée en 4 zones (AA, BB, CC et DD). 
 Le fichier concerne 24 000 unités de production et comporte 5 variables : 
 
