@@ -1,0 +1,2 @@
+"moyenneStrate";"TotalStrate";"VarianceMoyenneStratifié";"varianceMoyenneTotale";"VarianceMoyenneAllPorp";"PrecisionWaPor";"PrecisionR"
+3313.07736625002;79513856.7900006;140.588588347879;80979026888.3782;163721.854848712;0.357884968125731;0.357884968125731
